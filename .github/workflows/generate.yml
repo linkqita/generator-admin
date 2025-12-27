@@ -20,7 +20,7 @@ jobs:
       - name: Checkout template
         uses: actions/checkout@v4
         with:
-          repository: linkqita/template-engine   # GANTI kalau username beda
+          repository: linkqita/download-engine   # GANTI kalau username beda
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Create new repo from template
