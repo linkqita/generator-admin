@@ -1,0 +1,49 @@
+name: Generate Page
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Nama repo (halaman baru)"
+        required: true
+      file:
+        description: "Link file (direct download)"
+        required: true
+      shop:
+        description: "Link Shopee (affiliate)"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout template
+        uses: actions/checkout@v4
+        with:
+          repository: linkqita/template-engine   # GANTI kalau username beda
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Create new repo from template
+        run: |
+          gh auth login --with-token <<< "${{ secrets.GH_TOKEN }}"
+          gh repo create linkqita/${{ github.event.inputs.repo }} --public --template linkqita/template-engine
+
+      - name: Wait for repo
+        run: sleep 8
+
+      - name: Update index.html
+        run: |
+          gh repo clone linkqita/${{ github.event.inputs.repo }}
+          cd ${{ github.event.inputs.repo }}
+          sed -i 's|const file = ".*";|const file = "${{ github.event.inputs.file }}";|g' index.html
+          sed -i 's|const shopee = ".*";|const shopee = "${{ github.event.inputs.shop }}";|g' index.html
+          sed -i 's|const PAGE_ID = ".*";|const PAGE_ID = "${{ github.event.inputs.repo }}";|g' index.html
+          git config user.name "generator-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add index.html
+          git commit -m "set links"
+          git push
+
+      - name: Enable Pages
+        run: |
+          gh api -X POST repos/linkqita/${{ github.event.inputs.repo }}/pages -f source.branch=main -f source.path=/
