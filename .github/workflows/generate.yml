@@ -17,18 +17,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Auth
-        run: |
-          gh auth login --with-token <<< "${{ secrets.GH_TOKEN }}"
+
+      - name: Set token for gh
+        run: echo "GH_TOKEN=${{ secrets.GH_TOKEN }}" >> $GITHUB_ENV
 
       - name: Create repo from template
         run: |
-          gh repo create linkqita/${{ github.event.inputs.repo }} --public --template linkqita/template-engine
+          gh repo create linkqita/${{ github.event.inputs.repo }} \
+          --public \
+          --template linkqita/template-engine
 
       - name: Wait repo
-        run: sleep 8
+        run: sleep 6
 
-      - name: Clone new repo
+      - name: Clone and modify
         run: |
           gh repo clone linkqita/${{ github.event.inputs.repo }}
           cd ${{ github.event.inputs.repo }}
@@ -43,4 +45,5 @@ jobs:
 
       - name: Enable Pages
         run: |
-          gh api -X POST repos/linkqita/${{ github.event.inputs.repo }}/pages -f source.branch=main -f source.path=/
+          gh api -X POST repos/linkqita/${{ github.event.inputs.repo }}/pages \
+          -f source.branch=main -f source.path=/
