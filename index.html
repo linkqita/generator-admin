@@ -23,9 +23,9 @@ button{background:#38BFB3;color:#0F2F3A;font-weight:bold;cursor:pointer}
 </div>
 
 <script>
-const GITHUB_TOKEN = "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";          // 🔒 simpan privat
-const OWNER = "linkqita";                         // username GitHub kamu
-const TEMPLATE = "download-engine";               // repo cetakan
+const GITHUB_TOKEN = "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";
+const OWNER = "linkqita";              // username GitHub kamu
+const TEMPLATE = "download-engine";    // repo cetakan
 
 async function generate(){
   const repo = document.getElementById('repo').value.trim();
@@ -34,45 +34,52 @@ async function generate(){
   if(!repo||!file||!shop){ alert("Lengkapi semua field"); return; }
 
   const headers = { 
-    "Authorization": "Bearer " + GITHUB_TOKEN,
-    "Accept": "application/vnd.github+json"
+    "Authorization": "token " + GITHUB_TOKEN,
+    "Accept": "application/vnd.github.baptiste-preview+json",
+    "Content-Type":"application/json"
   };
 
-  // 1) Duplikat repo dari template
+  // 1) Duplikat repo template
   const r1 = await fetch(`https://api.github.com/repos/${OWNER}/${TEMPLATE}/generate`,{
     method:"POST",
-    headers: {...headers,"Content-Type":"application/json"},
+    headers,
     body: JSON.stringify({ name: repo, private: false })
   });
-  if(!r1.ok){ document.getElementById('out').innerText="Gagal duplikat"; return; }
+  if(!r1.ok){
+    const t = await r1.text();
+    document.getElementById('out').innerText="Gagal duplikat: "+t;
+    return;
+  }
 
-  // 2) Ambil index.html
-  await new Promise(r=>setTimeout(r,1200));
+  // 2) Tunggu sebentar lalu ambil index.html
+  await new Promise(r=>setTimeout(r,1500));
   const r2 = await fetch(`https://api.github.com/repos/${OWNER}/${repo}/contents/index.html`,{ headers });
   const j2 = await r2.json();
-  const content = atob(j2.content);
 
-  // 3) Ganti variabel file & shopee & PAGE_ID
+  // 3) Ganti variabel di index.html
+  const content = atob(j2.content);
   const updated = content
     .replace(/const file\s*=\s*".*?";/,'const file = "'+file+'";')
     .replace(/const shopee\s*=\s*".*?";/,'const shopee = "'+shop+'";')
     .replace(/const PAGE_ID\s*=\s*".*?";/,'const PAGE_ID = "'+repo+'";');
 
-  // 4) Commit kembali
+  // 4) Commit balik
   const r3 = await fetch(`https://api.github.com/repos/${OWNER}/${repo}/contents/index.html`,{
     method:"PUT",
-    headers:{...headers,"Content-Type":"application/json"},
+    headers,
     body: JSON.stringify({
       message: "set links",
       content: btoa(updated),
       sha: j2.sha
     })
   });
-  if(!r3.ok){ document.getElementById('out').innerText="Gagal update file"; return; }
+  if(!r3.ok){
+    const t = await r3.text();
+    document.getElementById('out').innerText="Gagal update: "+t;
+    return;
+  }
 
   document.getElementById('out').innerText =
-   "SUKSES! URL: https://"+OWNER+".github.io/"+repo+"/";
+    "SUKSES! URL: https://"+OWNER+".github.io/"+repo+"/";
 }
 </script>
-</body>
-</html>
