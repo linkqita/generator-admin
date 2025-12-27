@@ -17,21 +17,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout template
-        uses: actions/checkout@v4
-        with:
-          repository: linkqita/download-engine   # GANTI kalau username beda
-          token: ${{ secrets.GH_TOKEN }}
-
-      - name: Create new repo from template
+      - name: Auth
         run: |
           gh auth login --with-token <<< "${{ secrets.GH_TOKEN }}"
+
+      - name: Create repo from template
+        run: |
           gh repo create linkqita/${{ github.event.inputs.repo }} --public --template linkqita/template-engine
 
-      - name: Wait for repo
+      - name: Wait repo
         run: sleep 8
 
-      - name: Update index.html
+      - name: Clone new repo
         run: |
           gh repo clone linkqita/${{ github.event.inputs.repo }}
           cd ${{ github.event.inputs.repo }}
